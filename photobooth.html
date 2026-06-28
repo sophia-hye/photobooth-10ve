@@ -194,6 +194,13 @@
         </div>
       </div>
 
+      <div class="step-label">3. 프레임 색을 골라주세요</div>
+      <div class="seg" id="frameColorToggle">
+        <button data-fc="white">화이트</button>
+        <button data-fc="beige" class="active">베이지</button>
+        <button data-fc="black">블랙</button>
+      </div>
+
       <div class="controls">
         <button class="act btn-primary" id="goShootBtn">사진 찍으러 가기</button>
         <button class="act btn-ghost" id="demoBtn">샘플로 프레임 미리보기</button>
@@ -289,6 +296,12 @@
 
   let currentTheme = 'adult_kr';
   let currentLayout = 'portrait';
+  let currentFrameColor = 'beige';
+  const FRAME_COLORS = {
+    white: { bg:'#ffffff', ink:'#1d1b1a', sub:'#8a7d68', line:'#1d1b1a' },
+    beige: { bg:'#f6f1e9', ink:'#1d1b1a', sub:'#8a7d68', line:'#1d1b1a' },
+    black: { bg:'#211e1c', ink:'#f7f2ea', sub:'#b3a48d', line:'#f7f2ea' }
+  };
   let stream = null;
   let captured = [];
   let selected = [];
@@ -302,6 +315,16 @@
   let dummyImgs = null;
   let isDemo = false;
   const SHOTS = 8;
+
+  // ---- 프레임 색 토글 ----
+  $('frameColorToggle').addEventListener('click', e => {
+    const btn = e.target.closest('button'); if (!btn) return;
+    currentFrameColor = btn.dataset.fc;
+    [...$('frameColorToggle').children].forEach(b => b.classList.toggle('active', b === btn));
+    renderThumbnails();
+    if (resultView.style.display === 'block') renderResult();
+    if (selectView.style.display === 'block') updateLive();
+  });
 
   // ---- 레이아웃 토글 ----
   $('layoutToggle').addEventListener('click', e => {
@@ -630,43 +653,44 @@
   // -------- 어른용 (lang: kr | en) --------
   function drawAdult(canvas, imgs, lang, L) {
     const {W,padX,padTop,gap,footer,pw,ph,H,cols,rows}=L;
+    const FC=FRAME_COLORS[currentFrameColor];
     canvas.width=W; canvas.height=H;
     const ctx=canvas.getContext('2d');
 
-    ctx.fillStyle='#f6f1e9'; ctx.fillRect(0,0,W,H);
-    ctx.strokeStyle='#1d1b1a'; ctx.lineWidth=1.5; ctx.strokeRect(16,16,W-32,H-32);
+    ctx.fillStyle=FC.bg; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle=FC.line; ctx.lineWidth=1.5; ctx.strokeRect(16,16,W-32,H-32);
     ctx.lineWidth=0.8; ctx.strokeRect(24,24,W-48,H-48);
 
     const t1=Math.round(padTop*0.60), t2=Math.round(padTop*0.85);
-    ctx.fillStyle='#1d1b1a'; ctx.textAlign='center';
+    ctx.fillStyle=FC.ink; ctx.textAlign='center';
     if (lang === 'en') {
       ctx.font="700 28px 'Playfair Display', serif";
       ctx.fillText('THE TEN COMMANDMENTS', W/2, t1);
-      ctx.font="500 13px 'Playfair Display', serif"; ctx.fillStyle='#8a7d68';
+      ctx.font="500 13px 'Playfair Display', serif"; ctx.fillStyle=FC.sub;
       ctx.fillText('EXODUS  20', W/2, t2);
     } else {
       ctx.font="700 30px 'Gowun Batang', serif";
       ctx.fillText('십  계  명', W/2, t1+2);
-      ctx.font="13px 'Gowun Batang', serif"; ctx.fillStyle='#8a7d68';
+      ctx.font="13px 'Gowun Batang', serif"; ctx.fillStyle=FC.sub;
       ctx.fillText('THE  TEN  COMMANDMENTS', W/2, t2);
     }
 
     placePhotos(ctx, imgs, padX, padTop, pw, ph, gap, 0, false, cols);
     const aw=cols*pw+(cols-1)*gap, ah=rows*ph+(rows-1)*gap;
-    ctx.strokeStyle='#d8cebd'; ctx.lineWidth=1;
+    ctx.strokeStyle=FC.sub; ctx.lineWidth=1;
     ctx.strokeRect(padX-0.5, padTop-0.5, aw+1, ah+1);
 
-    ctx.fillStyle='#1d1b1a'; ctx.textAlign='center';
+    ctx.fillStyle=FC.ink; ctx.textAlign='center';
     if (lang === 'en') {
       ctx.font="italic 500 17px 'Playfair Display', serif";
       ctx.fillText('"Love the Lord your God', W/2, H-footer+44);
       ctx.fillText('with all your heart"', W/2, H-footer+68);
-      ctx.fillStyle='#8a7d68'; ctx.font="500 13px 'Playfair Display', serif";
+      ctx.fillStyle=FC.sub; ctx.font="500 13px 'Playfair Display', serif";
       ctx.fillText('Matthew 22:37  ·  '+dateStr(), W/2, H-footer+92);
     } else {
       ctx.font="16px 'Gowun Batang', serif";
       ctx.fillText('"네 마음을 다하여 주 너의 하나님을 사랑하라"', W/2, H-footer+46);
-      ctx.fillStyle='#8a7d68'; ctx.font="13px 'Gowun Batang', serif";
+      ctx.fillStyle=FC.sub; ctx.font="13px 'Gowun Batang', serif";
       ctx.fillText('출애굽기 20장  ·  '+dateStr(), W/2, H-footer+72);
     }
   }
@@ -677,10 +701,11 @@
 
   function drawKids(canvas, imgs, L) {
     const {W,padX,padTop,gap,footer,pw,ph,H,cols}=L;
+    const FC=FRAME_COLORS[currentFrameColor];
     canvas.width=W; canvas.height=H;
     const ctx=canvas.getContext('2d');
 
-    ctx.fillStyle='#f7efe5'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle=FC.bg; ctx.fillRect(0,0,W,H);
     const rng=makeRng(20250728);
     const N=Math.round(W*H/2400);
     for(let i=0;i<N;i++){
@@ -715,7 +740,7 @@
     confHeart(ctx, W/2-38, baseY-24, '#e8503a', 30);
     ctx.fillStyle='#4a90d9'; ctx.fillText('V', W/2+18, baseY);
     ctx.fillStyle='#7b5cc4'; ctx.fillText('E', W/2+72, baseY);
-    ctx.fillStyle='#8a7d68'; ctx.font="16px 'Gowun Dodum', sans-serif";
+    ctx.fillStyle=FC.sub; ctx.font="16px 'Gowun Dodum', sans-serif";
     ctx.fillText('여름성경학교  ·  '+dateStr(), W/2, H-24);
   }
 
