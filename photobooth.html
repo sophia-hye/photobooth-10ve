@@ -686,19 +686,29 @@
     }
     placePhotos(ctx, imgs, padX, padTop, pw, ph, gap, 7, true, cols);
 
-    // 전경 confetti — 사진 위로도 살짝 걸치게 (얼굴 가리지 않게 작은 장식 위주)
+    // 전경 confetti — 각 사진 테두리 둘레에만 살짝 걸치게 (중앙=얼굴은 비움)
     const rngF=makeRng(99887766);
-    const photoTop=padTop, photoBot=H-footer;
-    const NF=Math.round(N*0.32);
-    for(let i=0;i<NF;i++){
-      const x=rngF()*W, y=photoTop-12 + rngF()*((photoBot-photoTop)+24);
-      const col=KIDS_COLORS[Math.floor(rngF()*KIDS_COLORS.length)];
-      const t=rngF(), s=7+rngF()*10, rot=(rngF()-0.5)*1.0;
-      if(t<0.42) confDot(ctx,x,y,col,s*0.30);
-      else if(t<0.68) confHeart(ctx,x,y,col,s*0.7);
-      else if(t<0.86) confStar(ctx,x,y,col,s*0.6);
-      else confSquiggle(ctx,x,y,col,s,rot);
-    }
+    const band=Math.min(pw,ph)*0.09;
+    imgs.forEach((im,idx)=>{
+      const cx=idx%cols, cy=Math.floor(idx/cols);
+      const bx=padX+cx*(pw+gap), by=padTop+cy*(ph+gap);
+      const peri2=2*(pw+ph);
+      const per=14;
+      for(let k=0;k<per;k++){
+        const d=rngF()*peri2; let x,y;
+        if(d<pw){ x=bx+d; y=by; }
+        else if(d<pw+ph){ x=bx+pw; y=by+(d-pw); }
+        else if(d<2*pw+ph){ x=bx+(2*pw+ph-d); y=by+ph; }
+        else { x=bx; y=by+(peri2-d); }
+        x+=(rngF()-0.5)*band*1.6; y+=(rngF()-0.5)*band*1.6;
+        const col=KIDS_COLORS[Math.floor(rngF()*KIDS_COLORS.length)];
+        const t=rngF(), s=6+rngF()*8, rot=(rngF()-0.5);
+        if(t<0.46) confDot(ctx,x,y,col,s*0.30);
+        else if(t<0.70) confHeart(ctx,x,y,col,s*0.7);
+        else if(t<0.88) confStar(ctx,x,y,col,s*0.6);
+        else confSquiggle(ctx,x,y,col,s,rot);
+      }
+    });
 
     const baseY=H-footer/2+6;
     ctx.textAlign='center'; ctx.textBaseline='alphabetic'; ctx.font="70px 'Jua', sans-serif";
