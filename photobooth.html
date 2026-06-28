@@ -427,7 +427,17 @@
       selectGrid.appendChild(cell);
     });
     refreshBadges();
+    updateSelectButtons();
     hideAll(); selectView.style.display='block'; stageEl.classList.add('wide');
+  }
+  function updateSelectButtons(){
+    if(isDemo){
+      saveBtn.textContent='이대로 사진 찍기';
+      reshootBtn.textContent='설정으로 돌아가기';
+    } else {
+      saveBtn.textContent='사진 저장하기';
+      reshootBtn.textContent='다시 찍기';
+    }
   }
   function togglePick(i){
     const pos=selected.indexOf(i);
@@ -442,7 +452,7 @@
       cell.querySelector('.badge').textContent = pos>=0 ? (pos+1) : '';
     });
     selCount.textContent = selected.length+' / 4';
-    saveBtn.disabled = selected.length!==4;
+    saveBtn.disabled = isDemo ? false : (selected.length!==4);
     const ready = selected.length===4;
     decoTools.style.display = ready ? 'block' : 'none';
     if(!ready){ selDeco=null; hideCtrl(); }
@@ -574,6 +584,7 @@
   });
 
   saveBtn.addEventListener('click', ()=>{
+    if(isDemo){ isDemo=false; showCapture(); return; }
     if(selected.length!==4) return;
     const keep=selDeco; selDeco=null; updateLive();   // 선택 표시 숨기고 저장
     liveCanvas.toBlob(blob=>{
