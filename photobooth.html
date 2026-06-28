@@ -22,6 +22,18 @@
   /* 단계 라벨 */
   .step-label { font-family:'Jua',sans-serif; font-size:14px; color:#6b6256; margin:2px 2px 10px; }
   .setup-note { font-size:12px; color:#9a9384; text-align:center; margin:6px 0 16px; }
+
+  /* 레이아웃 선택 카드 */
+  .layout-cards { display:flex; gap:12px; margin-bottom:8px; }
+  .lay-card {
+    flex:1; background:#fbf8f2; border:2px solid #e7e2d8; border-radius:14px;
+    padding:14px 10px 12px; cursor:pointer; text-align:center;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .lay-card.active { border-color:var(--pop); box-shadow:0 4px 14px rgba(232,80,58,0.15); }
+  .lay-card canvas { display:block; margin:0 auto; max-width:100%; max-height:170px; width:auto; height:auto; border-radius:6px; }
+  .lay-card .name { color:var(--ink); font-family:'Jua',sans-serif; font-size:13px; margin-top:10px; }
   #setup .step-label:nth-of-type(1){ margin-top:0; }
   #setup { display:block; }
 
@@ -177,9 +189,13 @@
     <!-- ① 설정: 레이아웃만 선택 -->
     <div id="setup">
       <div class="step-label">사진 방향을 골라주세요</div>
-      <div class="seg" id="layoutToggle">
-        <button data-layout="portrait" class="active">세로형 1×4</button>
-        <button data-layout="landscape">가로형 2×2</button>
+      <div class="layout-cards" id="layoutToggle">
+        <div class="lay-card active" data-layout="portrait">
+          <canvas></canvas><div class="name">세로형 1×4</div>
+        </div>
+        <div class="lay-card" data-layout="landscape">
+          <canvas></canvas><div class="name">가로형 2×2</div>
+        </div>
       </div>
       <div class="setup-note">프레임 테마와 색은 사진을 찍은 뒤에 골라요</div>
       <div class="controls">
@@ -310,11 +326,11 @@
     if (selectView.style.display === 'block') updateLive();
   });
 
-  // ---- 레이아웃 토글 ----
+  // ---- 레이아웃 카드 ----
   $('layoutToggle').addEventListener('click', e => {
-    const btn = e.target.closest('button'); if (!btn) return;
-    currentLayout = btn.dataset.layout;
-    [...$('layoutToggle').children].forEach(b => b.classList.toggle('active', b === btn));
+    const card = e.target.closest('.lay-card'); if (!card) return;
+    currentLayout = card.dataset.layout;
+    [...$('layoutToggle').children].forEach(c => c.classList.toggle('active', c === card));
     if (selectView.style.display === 'block') updateLive();
   });
 
@@ -726,6 +742,30 @@
   function confHeart(ctx,x,y,c,size){ ctx.save(); ctx.translate(x,y); ctx.scale(size/24,size/24); ctx.fillStyle=c; ctx.beginPath(); ctx.moveTo(0,6); ctx.bezierCurveTo(-12,-6,-12,-16,0,-10); ctx.bezierCurveTo(12,-16,12,-6,0,6); ctx.closePath(); ctx.fill(); ctx.restore(); }
   function confStar(ctx,x,y,c,size){ ctx.save(); ctx.translate(x,y); ctx.fillStyle=c; ctx.beginPath(); for(let i=0;i<5;i++){ const a=-Math.PI/2+i*2*Math.PI/5; ctx.lineTo(Math.cos(a)*size,Math.sin(a)*size); const a2=a+Math.PI/5; ctx.lineTo(Math.cos(a2)*size*0.45,Math.sin(a2)*size*0.45); } ctx.closePath(); ctx.fill(); ctx.restore(); }
   function confNumber(ctx,x,y,c,size,num,rot){ ctx.save(); ctx.translate(x,y); ctx.rotate(rot); ctx.fillStyle=c; ctx.font="900 "+Math.round(size)+"px 'Jua', sans-serif"; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(num, 0, 0); ctx.restore(); }
+
+  // ---- 레이아웃 미리보기 썸네일 (배치 모양만) ----
+  function drawLayoutThumb(canvas, layoutKey){
+    const L=LAYOUTS[layoutKey];
+    canvas.width=L.W; canvas.height=L.H;
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#f6f1e9'; ctx.fillRect(0,0,L.W,L.H);
+    const {padX,padTop,pw,ph,gap,cols}=L;
+    for(let i=0;i<4;i++){
+      const cx=i%cols, cy=Math.floor(i/cols);
+      const x=padX+cx*(pw+gap), y=padTop+cy*(ph+gap);
+      ctx.fillStyle='#ffffff'; ctx.fillRect(x,y,pw,ph);
+      ctx.strokeStyle='#d8cebd'; ctx.lineWidth=2; ctx.strokeRect(x,y,pw,ph);
+      ctx.fillStyle='#c8b9a0'; ctx.font="900 "+Math.round(ph*0.34)+"px 'Jua', sans-serif";
+      ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(i+1, x+pw/2, y+ph/2);
+    }
+  }
+  function renderLayoutThumbs(){
+    [...$('layoutToggle').children].forEach(card=>{
+      drawLayoutThumb(card.querySelector('canvas'), card.dataset.layout);
+    });
+  }
+  renderLayoutThumbs();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(renderLayoutThumbs);
 })();
 </script>
 </body>
