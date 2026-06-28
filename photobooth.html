@@ -55,7 +55,7 @@
   .stage {
     width:100%; max-width:460px; background:#fff;
     border:1px solid #ece7dd; border-radius:22px; padding:20px;
-    box-shadow:0 10px 34px rgba(60,50,40,0.08);
+    box-shadow:0 10px 34px rgba(60,50,40,0.08); transition:max-width .2s ease;
   }
   .viewport {
     position:relative; width:100%; aspect-ratio:4/3; background:#000;
@@ -131,11 +131,13 @@
   .select-guide b { color:var(--pop); }
   .select-guide #selCount { display:inline-block; margin-left:6px; font-family:'Jua',sans-serif; color:var(--pop); }
   .live-preview {
-    display:block; margin:0 auto 16px; max-width:240px; max-height:48vh;
+    display:block; margin:0 auto 16px; max-width:300px; max-height:56vh;
     width:auto; height:auto; border-radius:8px;
     box-shadow:0 8px 24px rgba(60,50,40,0.15); background:#f6f1e9;
     touch-action:none;
   }
+  .select-body { display:flex; flex-direction:column; }
+  .select-left, .select-right { width:100%; }
   .select-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
   .pick {
     position:relative; aspect-ratio:4/3; border-radius:8px; overflow:hidden;
@@ -152,6 +154,15 @@
   .pick.on .badge { display:flex; }
   #result canvas { max-width:240px; width:100%; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.25); }
   .hint { color:#9a9384; font-size:12px; text-align:center; margin-top:18px; max-width:460px; line-height:1.6; }
+
+  /* 데스크탑: 선택 화면 2단 (미리보기 왼쪽 / 꾸미기 오른쪽) */
+  @media (min-width:760px) {
+    .stage.wide { max-width:880px; }
+    .stage.wide .select-body { flex-direction:row; gap:28px; align-items:flex-start; }
+    .stage.wide .select-left { flex:0 0 360px; width:360px; position:sticky; top:20px; }
+    .stage.wide .select-right { flex:1; min-width:0; }
+    .stage.wide .live-preview { max-width:360px; max-height:76vh; margin:0 auto; }
+  }
   .error {
     background:#fff3f0; color:var(--pop); border:1px solid #f3c8bf;
     padding:12px; border-radius:10px; font-size:13px; margin-top:12px; display:none; line-height:1.5;
@@ -213,30 +224,36 @@
     <!-- ③ 8장 중 4장 선택 (라이브 미리보기 + 꾸미기) -->
     <div id="select">
       <p class="select-guide">사진을 탭해 프레임을 채워보세요 <span id="selCount">0 / 4</span></p>
-      <canvas id="liveCanvas" class="live-preview"></canvas>
-      <div class="select-grid" id="selectGrid"></div>
-
-      <!-- 4장 다 채우면 등장 -->
-      <div id="decoTools">
-        <div class="deco-title">스티커를 탭해서 올리고, 사진 위에서 드래그해 옮기세요</div>
-        <div class="sticker-row" id="stickerRow"></div>
-        <div class="text-row">
-          <input id="decoText" type="text" placeholder="문구 입력 (예: 2026 여름수련회)" maxlength="20" />
-          <button class="act btn-ghost mini" id="addTextBtn">추가</button>
+      <div class="select-body">
+        <div class="select-left">
+          <canvas id="liveCanvas" class="live-preview"></canvas>
         </div>
-        <div class="text-colors" id="textColors"></div>
-        <div id="decoCtrl">
-          <span class="ctrl-label">선택한 꾸미기</span>
-          <button class="cbtn" data-act="big">＋</button>
-          <button class="cbtn" data-act="small">－</button>
-          <button class="cbtn" data-act="rot">↻</button>
-          <button class="cbtn del" data-act="del">삭제</button>
-        </div>
-      </div>
+        <div class="select-right">
+          <div class="select-grid" id="selectGrid"></div>
 
-      <div class="controls">
-        <button class="act btn-primary" id="saveBtn" disabled>사진 저장하기</button>
-        <button class="act btn-ghost" id="reshootBtn">다시 찍기</button>
+          <!-- 4장 다 채우면 등장 -->
+          <div id="decoTools">
+            <div class="deco-title">스티커를 탭해서 올리고, 사진 위에서 드래그해 옮기세요</div>
+            <div class="sticker-row" id="stickerRow"></div>
+            <div class="text-row">
+              <input id="decoText" type="text" placeholder="문구 입력 (예: 2026 여름수련회)" maxlength="20" />
+              <button class="act btn-ghost mini" id="addTextBtn">추가</button>
+            </div>
+            <div class="text-colors" id="textColors"></div>
+            <div id="decoCtrl">
+              <span class="ctrl-label">선택한 꾸미기</span>
+              <button class="cbtn" data-act="big">＋</button>
+              <button class="cbtn" data-act="small">－</button>
+              <button class="cbtn" data-act="rot">↻</button>
+              <button class="cbtn del" data-act="del">삭제</button>
+            </div>
+          </div>
+
+          <div class="controls">
+            <button class="act btn-primary" id="saveBtn" disabled>사진 저장하기</button>
+            <button class="act btn-ghost" id="reshootBtn">다시 찍기</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -257,6 +274,7 @@
 <script>
 (function () {
   const $ = id => document.getElementById(id);
+  const stageEl = document.querySelector('.stage');
   const video=$('video'), startBtn=$('startBtn'), shootBtn=$('shootBtn'),
         resetBtn=$('resetBtn'), demoBtn=$('demoBtn'), downloadBtn=$('downloadBtn'),
         againBtn=$('againBtn'), countdownEl=$('countdown'), flashEl=$('flash'),
@@ -365,7 +383,7 @@
 
   function clearShots(){ captured=[]; selected=[]; decos=[]; selDeco=null; [...shotsEl.children].forEach((s,i)=>{s.innerHTML='';s.textContent=i+1;}); [...progressEl.children].forEach(s=>s.classList.remove('done')); }
 
-  function hideAll(){ setupView.style.display='none'; captureView.style.display='none'; selectView.style.display='none'; resultView.style.display='none'; }
+  function hideAll(){ setupView.style.display='none'; captureView.style.display='none'; selectView.style.display='none'; resultView.style.display='none'; stageEl.classList.remove('wide'); }
   function showSetup(){ clearShots(); hideAll(); setupView.style.display='block'; }
   function showCapture(){
     hideAll(); captureView.style.display='block';
@@ -389,7 +407,7 @@
       selectGrid.appendChild(cell);
     });
     refreshBadges();
-    hideAll(); selectView.style.display='block';
+    hideAll(); selectView.style.display='block'; stageEl.classList.add('wide');
   }
   function togglePick(i){
     const pos=selected.indexOf(i);
