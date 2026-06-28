@@ -127,7 +127,8 @@
   .text-row input:focus { border-color:var(--pop); }
   button.mini { font-size:14px; padding:10px 16px; }
   .text-colors { display:flex; gap:12px; justify-content:center; margin-top:12px; }
-  .text-colors .tc { width:30px; height:30px; border-radius:50%; cursor:pointer; transition:.12s; }
+  .text-colors .tc { width:30px; height:30px; border-radius:50%; cursor:pointer; transition:.12s; box-sizing:border-box; }
+  .text-colors .tc.white-chip { border:1px solid #d8cebd; }
   .text-colors .tc.active { transform:scale(1.2); box-shadow:0 0 0 2px #fff, 0 0 0 4px var(--pop); }
   #decoCtrl { display:none; align-items:center; justify-content:center; gap:8px; margin-top:14px; }
   #decoCtrl .ctrl-label { font-size:12px; color:#9a9384; margin-right:4px; }
@@ -477,7 +478,7 @@
   });
   TEXT_COLORS.forEach((c,i)=>{
     const d=document.createElement('div'); d.className='tc'+(i===0?' active':''); d.style.background=c;
-    if(c==='#ffffff') d.style.boxShadow='inset 0 0 0 1px #d8cebd';
+    if(c==='#ffffff') d.classList.add('white-chip');
     d.addEventListener('click',()=>{ textColor=c; [...textColorsEl.children].forEach(x=>x.classList.remove('active')); d.classList.add('active'); });
     textColorsEl.appendChild(d);
   });
