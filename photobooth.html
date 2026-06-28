@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>여름수련회 네컷 포토부스</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&family=Gowun+Batang:wght@400;700&family=Playfair+Display:wght@500;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&family=Gowun+Batang:wght@400;700&family=Playfair+Display:wght@500;700&family=Reenie+Beanie&family=Nanum+Pen+Script&display=swap');
 
   :root { --ink:#1d1b1a; --cream:#faf6ef; --pop:#e8503a; --line:#d8cebd; }
   * { box-sizing:border-box; margin:0; padding:0; }
@@ -435,7 +435,7 @@
   });
   addTextBtn.addEventListener('click', ()=>{
     const v=decoText.value.trim(); if(!v) return;
-    addDeco({type:'text', text:v, color:textColor, size:50});
+    addDeco({type:'text', text:v, color:textColor, size:76});
     decoText.value='';
   });
 
@@ -443,11 +443,18 @@
     const L=LAYOUTS[currentLayout];
     const d=Object.assign({x:L.W/2, y:L.H*0.42, rot:0}, base);
     decos.push(d); selDeco=d; showCtrl(); updateLive();
+    if(d.type==='text' && document.fonts){
+      document.fonts.load(textFont(d, d.size).split(',')[0]).then(updateLive).catch(()=>{});
+    }
+  }
+  function textFont(d, size){
+    const fam = /[가-힣]/.test(d.text) ? "'Nanum Pen Script'" : "'Reenie Beanie'";
+    return size + "px " + fam + ", cursive";
   }
   function decoBox(d){
     if(d.type==='sticker') return {w:d.size, h:d.size};
     const ctx=liveCanvas.getContext('2d');
-    ctx.save(); ctx.font="900 "+d.size+"px 'Jua', sans-serif";
+    ctx.save(); ctx.font=textFont(d, d.size);
     const w=ctx.measureText(d.text).width; ctx.restore();
     return {w:w, h:d.size};
   }
@@ -458,8 +465,8 @@
       ctx.textAlign='center'; ctx.textBaseline='middle';
       if(d.type==='sticker'){ ctx.font=d.size+"px serif"; ctx.fillText(d.emoji,0,0); }
       else {
-        ctx.font="900 "+d.size+"px 'Jua', sans-serif";
-        ctx.lineWidth=Math.max(3,d.size*0.16);
+        ctx.font=textFont(d, d.size);
+        ctx.lineWidth=Math.max(3,d.size*0.12);
         ctx.strokeStyle = d.color==='#ffffff' ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.9)';
         ctx.lineJoin='round'; ctx.strokeText(d.text,0,0);
         ctx.fillStyle=d.color; ctx.fillText(d.text,0,0);
