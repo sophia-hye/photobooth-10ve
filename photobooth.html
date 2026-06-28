@@ -492,9 +492,15 @@
       ctx.restore();
       if(d===selDeco){
         const bb=decoBox(d);
-        ctx.save(); ctx.translate(d.x,d.y); ctx.rotate(d.rot);
+        ctx.save();
         ctx.strokeStyle='#e8503a'; ctx.lineWidth=2; ctx.setLineDash([7,5]);
-        ctx.strokeRect(-bb.w/2-8,-bb.h/2-8,bb.w+16,bb.h+16);
+        ctx.strokeRect(d.x-bb.w/2-8, d.y-bb.h/2-8, bb.w+16, bb.h+16);
+        ctx.setLineDash([]);
+        // × 삭제 버튼 (우상단)
+        const xx=d.x+bb.w/2+8, xy=d.y-bb.h/2-8;
+        ctx.fillStyle='#e8503a'; ctx.beginPath(); ctx.arc(xx,xy,16,0,7); ctx.fill();
+        ctx.fillStyle='#fff'; ctx.font="bold 22px sans-serif";
+        ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('×', xx, xy-1);
         ctx.restore();
       }
     });
@@ -512,7 +518,16 @@
   }
   liveCanvas.addEventListener('pointerdown', e=>{
     if(selected.length<4) return;
-    const p=toCanvas(e), d=hitDeco(p.x,p.y);
+    const p=toCanvas(e);
+    // 선택된 요소의 × 버튼을 먼저 확인 → 삭제
+    if(selDeco){
+      const bb=decoBox(selDeco);
+      const xx=selDeco.x+bb.w/2+8, xy=selDeco.y-bb.h/2-8;
+      if(Math.hypot(p.x-xx, p.y-xy) < 24){
+        decos.splice(decos.indexOf(selDeco),1); selDeco=null; hideCtrl(); updateLive(); return;
+      }
+    }
+    const d=hitDeco(p.x,p.y);
     if(d){
       selDeco=d; dragging=true; dragOff={x:p.x-d.x, y:p.y-d.y};
       decos.splice(decos.indexOf(d),1); decos.push(d);
