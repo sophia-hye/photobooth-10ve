@@ -21,6 +21,7 @@
 
   /* 단계 라벨 */
   .step-label { font-family:'Jua',sans-serif; font-size:14px; color:#6b6256; margin:2px 2px 10px; }
+  .setup-note { font-size:12px; color:#9a9384; text-align:center; margin:6px 0 16px; }
   #setup .step-label:nth-of-type(1){ margin-top:0; }
   #setup { display:block; }
 
@@ -173,37 +174,17 @@
   <header><h1>여름수련회 네컷<span class="dot">.</span></h1></header>
 
   <div class="stage">
-    <!-- ① 설정: 레이아웃 + 테마 선택 -->
+    <!-- ① 설정: 레이아웃만 선택 -->
     <div id="setup">
-      <div class="step-label">1. 레이아웃을 골라주세요</div>
+      <div class="step-label">사진 방향을 골라주세요</div>
       <div class="seg" id="layoutToggle">
         <button data-layout="portrait" class="active">세로형 1×4</button>
         <button data-layout="landscape">가로형 2×2</button>
       </div>
-
-      <div class="step-label">2. 프레임 테마를 골라주세요</div>
-      <div class="theme-cards" id="themeCards">
-        <div class="theme-card active" data-theme="adult_kr">
-          <canvas></canvas><div class="name">십계명 · 한글</div>
-        </div>
-        <div class="theme-card" data-theme="adult_en">
-          <canvas></canvas><div class="name">십계명 · ENG</div>
-        </div>
-        <div class="theme-card" data-theme="kids">
-          <canvas></canvas><div class="name">키즈 · 1♥VE</div>
-        </div>
-      </div>
-
-      <div class="step-label">3. 프레임 색을 골라주세요</div>
-      <div class="seg" id="frameColorToggle">
-        <button data-fc="white">화이트</button>
-        <button data-fc="beige" class="active">베이지</button>
-        <button data-fc="black">블랙</button>
-      </div>
-
+      <div class="setup-note">프레임 테마와 색은 사진을 찍은 뒤에 골라요</div>
       <div class="controls">
         <button class="act btn-primary" id="goShootBtn">사진 찍으러 가기</button>
-        <button class="act btn-ghost" id="demoBtn">샘플로 프레임 미리보기</button>
+        <button class="act btn-ghost" id="demoBtn">샘플로 미리보기 (카메라 없이)</button>
       </div>
     </div>
 
@@ -236,6 +217,19 @@
           <canvas id="liveCanvas" class="live-preview"></canvas>
         </div>
         <div class="select-right">
+          <div class="step-label">프레임 테마</div>
+          <div class="seg" id="themeToggle">
+            <button data-theme="adult_kr" class="active">한글</button>
+            <button data-theme="adult_en">영문</button>
+            <button data-theme="kids">키즈</button>
+          </div>
+          <div class="step-label">프레임 색</div>
+          <div class="seg" id="frameColorToggle">
+            <button data-fc="white">화이트</button>
+            <button data-fc="beige" class="active">베이지</button>
+            <button data-fc="black">블랙</button>
+          </div>
+
           <div class="select-grid" id="selectGrid"></div>
 
           <!-- 4장 다 채우면 등장 -->
@@ -263,15 +257,6 @@
         </div>
       </div>
     </div>
-
-    <!-- ④ 결과 -->
-    <div id="result">
-      <canvas id="finalCanvas"></canvas>
-      <div class="controls">
-        <button class="act btn-primary" id="downloadBtn">사진 저장하기</button>
-        <button class="act btn-ghost" id="againBtn">처음으로</button>
-      </div>
-    </div>
   </div>
 
   <p class="hint">
@@ -283,14 +268,15 @@
   const $ = id => document.getElementById(id);
   const stageEl = document.querySelector('.stage');
   const video=$('video'), startBtn=$('startBtn'), shootBtn=$('shootBtn'),
-        resetBtn=$('resetBtn'), demoBtn=$('demoBtn'), downloadBtn=$('downloadBtn'),
-        againBtn=$('againBtn'), countdownEl=$('countdown'), flashEl=$('flash'),
+        resetBtn=$('resetBtn'), demoBtn=$('demoBtn'),
+        countdownEl=$('countdown'), flashEl=$('flash'),
         progressEl=$('progress'), shotsEl=$('shots'), errorEl=$('error'),
-        captureView=$('capture'), resultView=$('result'), finalCanvas=$('finalCanvas'),
+        captureView=$('capture'),
         selectView=$('select'), selectGrid=$('selectGrid'), saveBtn=$('saveBtn'),
         liveCanvas=$('liveCanvas'),
         reshootBtn=$('reshootBtn'), selCount=$('selCount'),
         setupView=$('setup'), goShootBtn=$('goShootBtn'), backSetupBtn=$('backSetupBtn'),
+        themeToggleEl=$('themeToggle'),
         decoTools=$('decoTools'), stickerRow=$('stickerRow'), decoText=$('decoText'),
         addTextBtn=$('addTextBtn'), textColorsEl=$('textColors'), decoCtrl=$('decoCtrl');
 
@@ -321,8 +307,6 @@
     const btn = e.target.closest('button'); if (!btn) return;
     currentFrameColor = btn.dataset.fc;
     [...$('frameColorToggle').children].forEach(b => b.classList.toggle('active', b === btn));
-    renderThumbnails();
-    if (resultView.style.display === 'block') renderResult();
     if (selectView.style.display === 'block') updateLive();
   });
 
@@ -331,17 +315,14 @@
     const btn = e.target.closest('button'); if (!btn) return;
     currentLayout = btn.dataset.layout;
     [...$('layoutToggle').children].forEach(b => b.classList.toggle('active', b === btn));
-    renderThumbnails();
-    if (resultView.style.display === 'block') renderResult();
     if (selectView.style.display === 'block') updateLive();
   });
 
-  // ---- 테마 카드 ----
-  $('themeCards').addEventListener('click', e => {
-    const card = e.target.closest('.theme-card'); if (!card) return;
-    currentTheme = card.dataset.theme;
-    [...$('themeCards').children].forEach(c => c.classList.toggle('active', c === card));
-    if (resultView.style.display === 'block') renderResult();
+  // ---- 테마 토글 ----
+  themeToggleEl.addEventListener('click', e => {
+    const btn = e.target.closest('button'); if (!btn) return;
+    currentTheme = btn.dataset.theme;
+    [...themeToggleEl.children].forEach(b => b.classList.toggle('active', b === btn));
     if (selectView.style.display === 'block') updateLive();
   });
 
@@ -388,25 +369,25 @@
   demoBtn.addEventListener('click', () => {
     isDemo = true;
     clearShots();
-    ['#9bb3c9','#c9a99b','#a9c99b','#c9bb9b'].forEach((col,i)=>{
+    const cols=['#9bb3c9','#c9a99b','#a9c99b','#c9bb9b','#b9a9c9','#c9c0a9','#a9c9c2','#c9a9b6'];
+    for(let i=0;i<8;i++){
       const c=document.createElement('canvas'); c.width=800; c.height=600;
-      const x=c.getContext('2d'); x.fillStyle=col; x.fillRect(0,0,800,600);
+      const x=c.getContext('2d'); x.fillStyle=cols[i]; x.fillRect(0,0,800,600);
       x.fillStyle='rgba(255,255,255,0.5)'; x.font="bold 180px sans-serif";
       x.textAlign='center'; x.textBaseline='middle'; x.fillText(i+1,400,300);
       pushShot(c.toDataURL('image/jpeg',0.9));
-    });
-    renderResult();
+    }
+    showSelect();
   });
 
   resetBtn.addEventListener('click', resetCapture);
-  againBtn.addEventListener('click', showSetup);
-  reshootBtn.addEventListener('click', ()=>{ clearShots(); showCapture(); });
-  goShootBtn.addEventListener('click', showCapture);
+  reshootBtn.addEventListener('click', ()=>{ if(isDemo){ showSetup(); } else { clearShots(); showCapture(); } });
+  goShootBtn.addEventListener('click', ()=>{ isDemo=false; showCapture(); });
   backSetupBtn.addEventListener('click', showSetup);
 
   function clearShots(){ captured=[]; selected=[]; decos=[]; selDeco=null; [...shotsEl.children].forEach((s,i)=>{s.innerHTML='';s.textContent=i+1;}); [...progressEl.children].forEach(s=>s.classList.remove('done')); }
 
-  function hideAll(){ setupView.style.display='none'; captureView.style.display='none'; selectView.style.display='none'; resultView.style.display='none'; stageEl.classList.remove('wide'); }
+  function hideAll(){ setupView.style.display='none'; captureView.style.display='none'; selectView.style.display='none'; stageEl.classList.remove('wide'); }
   function showSetup(){ clearShots(); hideAll(); setupView.style.display='block'; }
   function showCapture(){
     hideAll(); captureView.style.display='block';
@@ -587,21 +568,6 @@
     },'image/png');
   });
 
-  // 데모(샘플 미리보기)는 결과 화면 사용
-  function chosenImgs() {
-    return captured.map(src=>{ const im=new Image(); im.src=src; return im; });
-  }
-  function renderResult() {
-    const imgs = chosenImgs(); let loaded=0;
-    const go=()=>{ if(++loaded===4){
-      renderFrame(finalCanvas,currentTheme,imgs);
-      downloadBtn.style.display = isDemo ? 'none' : '';
-      againBtn.textContent = isDemo ? '미리보기 닫기' : '처음으로';
-      hideAll(); resultView.style.display='block';
-    } };
-    imgs.forEach(im=>{ if(im.complete) go(); else im.onload=go; });
-  }
-
   // ================= 프레임 렌더 (썸네일/결과 공용) =================
   // 두 레이아웃 규격
   const LAYOUTS = {
@@ -750,39 +716,6 @@
   function confHeart(ctx,x,y,c,size){ ctx.save(); ctx.translate(x,y); ctx.scale(size/24,size/24); ctx.fillStyle=c; ctx.beginPath(); ctx.moveTo(0,6); ctx.bezierCurveTo(-12,-6,-12,-16,0,-10); ctx.bezierCurveTo(12,-16,12,-6,0,6); ctx.closePath(); ctx.fill(); ctx.restore(); }
   function confStar(ctx,x,y,c,size){ ctx.save(); ctx.translate(x,y); ctx.fillStyle=c; ctx.beginPath(); for(let i=0;i<5;i++){ const a=-Math.PI/2+i*2*Math.PI/5; ctx.lineTo(Math.cos(a)*size,Math.sin(a)*size); const a2=a+Math.PI/5; ctx.lineTo(Math.cos(a2)*size*0.45,Math.sin(a2)*size*0.45); } ctx.closePath(); ctx.fill(); ctx.restore(); }
   function confNumber(ctx,x,y,c,size,num,rot){ ctx.save(); ctx.translate(x,y); ctx.rotate(rot); ctx.fillStyle=c; ctx.font="900 "+Math.round(size)+"px 'Jua', sans-serif"; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(num, 0, 0); ctx.restore(); }
-
-  downloadBtn.addEventListener('click', () => {
-    finalCanvas.toBlob(blob=>{
-      const url=URL.createObjectURL(blob); const a=document.createElement('a');
-      const tag = currentTheme==='kids'?'네컷_LOVE_':(currentTheme==='adult_en'?'네컷_TEN_':'네컷_십계명_');
-      a.href=url; a.download=tag+Date.now()+'.png'; a.click(); URL.revokeObjectURL(url);
-    },'image/png');
-  });
-
-  // ================= 테마 썸네일 미리보기 =================
-  function makeDummies(cb){
-    const imgs=[]; let loaded=0;
-    for (let i=0;i<4;i++){
-      const c=document.createElement('canvas'); c.width=400; c.height=300;
-      const x=c.getContext('2d'); x.fillStyle='#ffffff'; x.fillRect(0,0,400,300);
-      const im=new Image(); im.onload=()=>{ if(++loaded===4) cb(imgs); }; im.src=c.toDataURL('image/jpeg',0.9);
-      imgs[i]=im;
-    }
-  }
-  function renderThumbnails(){
-    makeDummies(imgs=>{
-      [...$('themeCards').children].forEach(card=>{
-        const cv=card.querySelector('canvas');
-        renderFrame(cv, card.dataset.theme, imgs);
-      });
-    });
-  }
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(renderThumbnails);
-    setTimeout(renderThumbnails, 1500); // 폰트 로딩 지연 대비 한 번 더
-  } else {
-    window.addEventListener('load', renderThumbnails);
-  }
 })();
 </script>
 </body>
