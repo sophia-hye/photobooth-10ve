@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>여름수련회 네컷 포토부스</title>
+<title>2026 여름 큐페키즈 네컷 포토부스</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&family=Gowun+Batang:wght@400;700&family=Playfair+Display:wght@500;700&family=Reenie+Beanie&family=Nanum+Pen+Script&display=swap');
 
@@ -185,7 +185,7 @@
 </style>
 </head>
 <body>
-  <header><h1>여름수련회 네컷<span class="dot">.</span></h1></header>
+  <header><h1>2026 여름 큐페키즈 네컷<span class="dot">.</span></h1></header>
 
   <div class="stage">
     <!-- ① 설정: 컷 수와 방향 선택 -->
@@ -260,7 +260,7 @@
             <div class="deco-title">스티커를 탭해서 올리고, 사진 위에서 드래그해 옮기세요</div>
             <div class="sticker-row" id="stickerRow"></div>
             <div class="text-row">
-              <input id="decoText" type="text" placeholder="문구 입력 (예: 2026 여름수련회)" maxlength="20" />
+              <input id="decoText" type="text" placeholder="문구 입력 (예: 2026 여름 큐페키즈)" maxlength="20" />
               <button class="act btn-ghost mini" id="addTextBtn">추가</button>
             </div>
             <div class="text-colors" id="textColors"></div>
@@ -715,6 +715,7 @@
     else { sw=img.width; sh=sw/tr; sx=0; sy=(img.height-sh)/2; }
     ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);
   }
+  const EVENT_NAME = '2026 여름 큐페키즈';   // 모든 프레임 공통 문구
   function dateStr(){ const d=new Date(); return d.getFullYear()+'. '+(d.getMonth()+1)+'. '+d.getDate(); }
 
   // -------- 어른용 (lang: kr | en) --------
@@ -756,12 +757,12 @@
       ctx.fillText('"Love the Lord your God', W/2, f1);
       ctx.fillText('with all your heart"', W/2, f2);
       ctx.fillStyle=FC.sub; ctx.font="500 13px 'Playfair Display', serif";
-      ctx.fillText('Matthew 22:37  ·  '+dateStr(), W/2, f3);
+      ctx.fillText(EVENT_NAME+'  ·  Matthew 22:37  ·  '+dateStr(), W/2, f3);
     } else {
       ctx.font="16px 'Gowun Batang', serif";
       ctx.fillText('"네 마음을 다하여 주 너의 하나님을 사랑하라"', W/2, f1);
       ctx.fillStyle=FC.sub; ctx.font="13px 'Gowun Batang', serif";
-      ctx.fillText('출애굽기 20장  ·  '+dateStr(), W/2, fk);
+      ctx.fillText(EVENT_NAME+'  ·  출애굽기 20장  ·  '+dateStr(), W/2, fk);
     }
   }
 
@@ -823,7 +824,7 @@
     ctx.fillStyle='#4a90d9'; ctx.fillText('V', W/2+18*k, baseY);
     ctx.fillStyle='#7b5cc4'; ctx.fillText('E', W/2+72*k, baseY);
     ctx.fillStyle=FC.sub; ctx.font=Math.max(13,Math.round(footer*0.11))+"px 'Gowun Dodum', sans-serif";
-    ctx.fillText('여름성경학교  ·  '+dateStr(), W/2, H-Math.round(footer*0.14));
+    ctx.fillText(EVENT_NAME+'  ·  '+dateStr(), W/2, H-Math.round(footer*0.14));
   }
 
   // -------- 10ve 스티커 로고 테마 --------
@@ -970,7 +971,7 @@
 
     ctx.fillStyle=FC.sub; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
     ctx.font=(portrait?15:14)+"px 'Gowun Dodum', sans-serif";
-    ctx.fillText('여름수련회  ·  '+dateStr(), W/2, capY);
+    ctx.fillText(EVENT_NAME+'  ·  '+dateStr(), W/2, capY);
 
     const logoY = H-footer+(footer-logoH)/2;
     if(tenveLogoReady) ctx.drawImage(tenveLogo, W/2-logoW/2, logoY, logoW, logoH);
