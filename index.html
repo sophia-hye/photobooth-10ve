@@ -72,7 +72,7 @@
     box-shadow:0 10px 34px rgba(60,50,40,0.08); transition:max-width .2s ease;
   }
   .viewport {
-    position:relative; width:100%; aspect-ratio:4/3; background:#000;
+    position:relative; width:100%; aspect-ratio:var(--shot-aspect, 4/3); background:#000;
     border-radius:14px; overflow:hidden; border:1px solid var(--line);
   }
   #capture { display:none; }
@@ -94,7 +94,7 @@
 
   .shots { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:14px; }
   .shots .slot {
-    aspect-ratio:4/3; border-radius:8px; background:#ece4d6; border:1px dashed var(--line);
+    aspect-ratio:var(--shot-aspect, 4/3); border-radius:8px; background:#ece4d6; border:1px dashed var(--line);
     overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:13px; color:#b3a48d;
   }
   .shots .slot img { width:100%; height:100%; object-fit:cover; }
@@ -155,7 +155,7 @@
   .select-left, .select-right { width:100%; }
   .select-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
   .pick {
-    position:relative; aspect-ratio:4/3; border-radius:8px; overflow:hidden;
+    position:relative; aspect-ratio:var(--shot-aspect, 4/3); border-radius:8px; overflow:hidden;
     cursor:pointer; border:2px solid transparent; transition:border-color .12s;
   }
   .pick img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -310,12 +310,21 @@
   const SHOTS_BY_COUNT = { 1:4, 2:4, 3:6, 4:8 };   // 컷 수별 촬영 장수
   const CUT_LABEL = { 1:'한컷', 2:'두컷', 3:'세컷', 4:'네컷' };
   function shotCount(){ return SHOTS_BY_COUNT[currentCount]; }
+
+  // 프레임 칸 비율 = 카메라 미리보기·촬영 비율 (세로 칸이면 세로로 찍는다)
+  function photoAspect(){ const L=curLayout(); return L.pw/L.ph; }
+  function isPortraitShot(){ return photoAspect() < 1; }
+  function applyShotAspect(){
+    const L=curLayout();
+    document.documentElement.style.setProperty('--shot-aspect', L.pw+' / '+L.ph);
+  }
   const FRAME_COLORS = {
     white: { bg:'#ffffff', ink:'#1d1b1a', sub:'#8a7d68', line:'#1d1b1a' },
     beige: { bg:'#f6f1e9', ink:'#1d1b1a', sub:'#8a7d68', line:'#1d1b1a' },
     black: { bg:'#211e1c', ink:'#f7f2ea', sub:'#b3a48d', line:'#f7f2ea' }
   };
   let stream = null;
+  let streamPortrait = null;                  // 현재 스트림이 세로로 열렸는지
   let captured = [];
   let selected = [];
   let imageCache = [];
@@ -343,6 +352,7 @@
     buildCaptureSlots();
     renderLayoutThumbs();
     updateSetupNote();
+    applyShotAspect();
   });
   function updateSetupNote(){
     $('setupNote').textContent =
@@ -354,6 +364,7 @@
     const card = e.target.closest('.lay-card'); if (!card) return;
     currentLayout = card.dataset.layout;
     [...$('layoutToggle').children].forEach(c => c.classList.toggle('active', c === card));
+    applyShotAspect();
     if (selectView.style.display === 'block') updateLive();
   });
 
@@ -366,22 +377,42 @@
   });
 
   // ---- 카메라 ----
+  // 세로 칸이면 세로 해상도를 요청해 화각을 세로로 확보한다
+  function camConstraints(){
+    const portraitShot=isPortraitShot();
+    return { audio:false, video:{
+      facingMode:'user',
+      width:  { ideal: portraitShot ?  960 : 1280 },
+      height: { ideal: portraitShot ? 1280 :  960 },
+      aspectRatio: { ideal: photoAspect() }
+    }};
+  }
+  function stopStream(){
+    if(!stream) return;
+    stream.getTracks().forEach(t=>t.stop());
+    stream=null; streamPortrait=null; video.srcObject=null;
+  }
   startBtn.addEventListener('click', async () => {
     errorEl.style.display = 'none';
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video:{ facingMode:'user', width:{ideal:1280}, height:{ideal:960} }, audio:false });
+      stream = await navigator.mediaDevices.getUserMedia(camConstraints());
+      streamPortrait = isPortraitShot();
       video.srcObject = stream; startBtn.style.display='none'; shootBtn.disabled=false;
     } catch (err) {
       errorEl.style.display='block';
       errorEl.textContent='카메라를 켤 수 없습니다: '+err.message+' — 권한/https 주소를 확인해 주세요.';
     }
   });
+  // 미리보기(object-fit:cover)와 같은 영역만 잘라 담아야 결과가 화면과 같다
   function takeShot() {
+    const vw=video.videoWidth||1280, vh=video.videoHeight||960, target=photoAspect();
+    let sw=vw, sh=Math.round(vw/target);
+    if(sh>vh){ sh=vh; sw=Math.round(vh*target); }
+    const sx=Math.round((vw-sw)/2), sy=Math.round((vh-sh)/2);
     const c=document.createElement('canvas');
-    c.width=video.videoWidth||1280; c.height=video.videoHeight||960;
-    const ctx=c.getContext('2d'); ctx.translate(c.width,0); ctx.scale(-1,1);
-    ctx.drawImage(video,0,0,c.width,c.height);
+    c.width=sw; c.height=sh;
+    const ctx=c.getContext('2d'); ctx.translate(sw,0); ctx.scale(-1,1);
+    ctx.drawImage(video, sx,sy,sw,sh, 0,0,sw,sh);
     pushShot(c.toDataURL('image/jpeg',0.92));
     flashEl.classList.remove('fire'); void flashEl.offsetWidth; flashEl.classList.add('fire');
   }
@@ -409,11 +440,12 @@
     isDemo = true;
     clearShots();
     const cols=['#9bb3c9','#c9a99b','#a9c99b','#c9bb9b','#b9a9c9','#c9c0a9','#a9c9c2','#c9a9b6'];
+    const dw=800, dh=Math.round(800/photoAspect());
     for(let i=0;i<shotCount();i++){
-      const c=document.createElement('canvas'); c.width=800; c.height=600;
-      const x=c.getContext('2d'); x.fillStyle=cols[i]; x.fillRect(0,0,800,600);
+      const c=document.createElement('canvas'); c.width=dw; c.height=dh;
+      const x=c.getContext('2d'); x.fillStyle=cols[i]; x.fillRect(0,0,dw,dh);
       x.fillStyle='rgba(255,255,255,0.5)'; x.font="bold 180px sans-serif";
-      x.textAlign='center'; x.textBaseline='middle'; x.fillText(i+1,400,300);
+      x.textAlign='center'; x.textBaseline='middle'; x.fillText(i+1,dw/2,dh/2);
       pushShot(c.toDataURL('image/jpeg',0.9));
     }
     showSelect();
@@ -443,6 +475,8 @@
   function showCapture(){
     hideAll(); captureView.style.display='block';
     errorEl.style.display='none';
+    applyShotAspect();
+    if(stream && streamPortrait!==isPortraitShot()) stopStream();   // 방향 바뀌면 다시 열기
     if(stream){ startBtn.style.display='none'; shootBtn.disabled=false; }
     else { startBtn.style.display=''; shootBtn.disabled=true; }
   }
@@ -979,6 +1013,7 @@
   buildCaptureSlots();
   renderLayoutThumbs();
   updateSetupNote();
+  applyShotAspect();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(renderLayoutThumbs);
 })();
 </script>
